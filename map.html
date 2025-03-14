@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Google Map</title>
+   <script async
+src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtK
+GLzxCbGf6d-Vsl5Fd2c8YJim_44xsc&callback=initMap">
+   </script>
+   <style>
+       #map {
+           height: 100vh; /* 화면 전체 높이를 지도에 사용 */
+           width: 100%;
+       }
+   </style>
+   <script>
+       function initMap() {
+           // 지도 기본 설정 (서울 중심)
+           const center = { lat: 37.5665, lng: 126.9780 }; // 서울 좌표
+           const map = new google.maps.Map(document.getElementById("map"), {
+               zoom: 10,
+               center: center,
+           });
+           // 마커 추가
+           const marker = new google.maps.Marker({
+               position: center,
+               map: map,
+               title: "서울",
+           });
+       }
+   </script>
+</head>
+<body>
+   <h1>Google Map</h1>
+   <div id="map"></div>
+</body>
+</html>
