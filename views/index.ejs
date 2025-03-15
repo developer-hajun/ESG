@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Google Map</title>
+   <script async
+src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&callback=initMap">
+   </script>
+   <style>
+       #map {
+           height: 100vh;
+           width: 100%;
+       }
+   </style>
+   <script>
+       function initMap() {
+           const center = { lat: 37.5665, lng: 126.9780 };
+           const map = new google.maps.Map(document.getElementById("map"), {
+               zoom: 10,
+               center: center,
+           });
+           const marker = new google.maps.Marker({
+               position: center,
+               map: map,
+               title: "서울",
+           });
+       }
+   </script>
+</head>
+<body>
+   <h1>Google Map</h1>
+   <div id="map"></div>
+</body>
+</html>
