@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Google Map - Clustered Markers</title>
+   <script>
+       function getRandomCoordinate(base, range) {
+           return base + (Math.random() - 0.5) * range;
+       }
+
+       function initMap() {
+           const mapElement = document.getElementById("map");
+           
+           if (!mapElement) {
+               console.error("❌ Error: 'map' 요소를 찾을 수 없습니다!");
+               return;
+           }
+
+           const busanCenter = { lat: 35.1796, lng: 129.0756 };
+           const map = new google.maps.Map(mapElement, {
+               zoom: 12,
+               center: busanCenter,
+           });
+
+           const markers = [];
+           for (let i = 0; i < 100; i++) {
+               const position = {
+                   lat: getRandomCoordinate(35.1796, 0.25),
+                   lng: getRandomCoordinate(129.0756, 0.25),
+               };
+               const marker = new google.maps.Marker({
+                   position: position,
+                   title: `위치 ${i + 1}`,
+               });
+               markers.push(marker);
+           }
+
+           new markerClusterer.MarkerClusterer({ 
+            map, 
+            markers, 
+            girdSize: 140, 
+            maxZoom: 14, 
+            minimumClusterSize: 2,
+        });
+       }
+
+       // HTML이 완전히 로드된 후 initMap 실행
+       document.addEventListener("DOMContentLoaded", () => {
+           window.initMap = initMap;
+       });
+   </script>
+   <script async defer 
+       src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&callback=initMap">
+   </script>
+   <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        initMap();
+    });
+</script>
+   <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
+   <style>
+       #map {
+           height: 100vh;
+           width: 100%;
+       }
+   </style>
+</head>
+<body>
+   <h1>Google Map - 부산시 랜덤 위치 (클러스터링)</h1>
+   <div id="map"></div> <!-- ❗ div#map이 실제로 존재하는지 확인 -->
+</body>
+</html>
