@@ -13,7 +13,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // 홈 라우트
 app.get("/", (req, res) => {
-    res.render("index", { googleMapsApiKey: "AIzaSyAtKGLzxCbGf6d-Vsl5Fd2c8YJim_44xsc" });
+    res.render("index2", { googleMapsApiKey: "AIzaSyAtKGLzxCbGf6d-Vsl5Fd2c8YJim_44xsc" });
 });
 
 app.listen(PORT, () => {

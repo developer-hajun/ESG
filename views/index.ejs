@@ -36,13 +36,10 @@
                markers.push(marker);
            }
 
-           new markerClusterer.MarkerClusterer({ 
-            map, 
-            markers, 
-            girdSize: 140, 
-            maxZoom: 14, 
-            minimumClusterSize: 2,
-        });
+            new markerClusterer.MarkerClusterer({ 
+                map, 
+                markers,
+            });
        }
 
        // HTML이 완전히 로드된 후 initMap 실행
