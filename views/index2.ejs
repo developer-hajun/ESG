@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Google Map - Clustered Markers</title>
+   <script>
+       function getRandomCoordinate(base, range) {
+           return base + (Math.random() - 0.5) * range;
+       }
+
+       function initMap() {
+           const mapElement = document.getElementById("map");
+           const sidebarElement = document.getElementById("sidebar");
+
+           if (!mapElement || !sidebarElement) {
+               console.error("❌ Error: 'map' 또는 'sidebar' 요소를 찾을 수 없습니다!");
+               return;
+           }
+
+           const busanCenter = { lat: 35.1796, lng: 129.0756 };
+           const map = new google.maps.Map(mapElement, {
+               zoom: 12,
+               center: busanCenter,
+           });
+
+           const infoWindow = new google.maps.InfoWindow();
+           const markers = [];
+           sidebarElement.innerHTML = ""; // 기존 리스트 초기화
+
+           for (let i = 0; i < 100; i++) {
+               const position = {
+                   lat: getRandomCoordinate(35.1796, 0.25),
+                   lng: getRandomCoordinate(129.0756, 0.25),
+               };
+
+               const marker = new google.maps.Marker({
+                   position: position,
+                   map: map,
+                   title: `위치 ${i + 1}`,
+               });
+
+               // 마커 클릭 이벤트 추가
+               marker.addListener("click", () => {
+                   infoWindow.setContent(`<strong>위치 ${i + 1}</strong><br>위도: ${position.lat.toFixed(5)}<br>경도: ${position.lng.toFixed(5)}`);
+                   infoWindow.open(map, marker);
+               });
+
+               markers.push(marker);
+
+               // 좌측 리스트에 추가
+               const listItem = document.createElement("div");
+               listItem.className = "list-item";
+               listItem.innerHTML = `<strong>위치 ${i + 1}</strong> <br>위도: ${position.lat.toFixed(5)} | 경도: ${position.lng.toFixed(5)}`;
+               listItem.addEventListener("click", () => {
+                   map.setCenter(marker.getPosition());
+                   map.setZoom(15);
+                   google.maps.event.trigger(marker, "click");
+               });
+
+               sidebarElement.appendChild(listItem);
+           }
+
+           // 마커 클러스터링 적용
+           new markerClusterer.MarkerClusterer({ 
+               map, 
+               markers, 
+           });
+       }
+
+       document.addEventListener("DOMContentLoaded", () => {
+           window.initMap = initMap;
+       });
+   </script>
+   <script async defer 
+       src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&callback=initMap">
+   </script>    
+   <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        initMap();
+    });
+</script>
+   <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
+   <style>
+       body {
+           display: flex;
+           height: 100vh;
+           margin: 0;
+           font-family: Arial, sans-serif;
+       }
+       #sidebar {
+           width: 300px;
+           height: 100vh;
+           overflow-y: auto;
+           background: #f8f9fa;
+           padding: 10px;
+           border-right: 2px solid #ddd;
+       }
+       #map {
+           flex-grow: 1;
+           height: 100vh;
+       }
+       .list-item {
+           padding: 10px;
+           border-bottom: 1px solid #ddd;
+           cursor: pointer;
+           transition: background 0.2s;
+       }
+       .list-item:hover {
+           background: #e9ecef;
+       }
+   </style>
+</head>
+<body>
+   <div id="sidebar"></div> <!-- 위치 리스트 -->
+   <div id="map"></div> <!-- 지도 -->
+</body>
+</html>
