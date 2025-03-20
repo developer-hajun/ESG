@@ -9,7 +9,7 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 // 정적 파일 서빙 (CSS, JS 등)
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static('public'));
 
 // 홈 라우트
 app.get("/", (req, res) => {
