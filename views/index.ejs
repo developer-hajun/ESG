@@ -5,13 +5,22 @@
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>Google Map - Clustered Markers</title>
    <script>
-       function getRandomCoordinate(base, range) {
-           return base + (Math.random() - 0.5) * range;
+       // DB에서 회사 데이터 가져오기
+       async function fetchCompanyData() {
+           try {
+               const response = await fetch('/api/companies');
+               return await response.json();
+           } catch (error) {
+               console.error('Error fetching company data:', error);
+               return [];
+           }
        }
 
+       // 구글 맵 초기화
        function initMap() {
            const mapElement = document.getElementById("map");
-           
+           const searchInput = document.getElementById("search");
+
            if (!mapElement) {
                console.error("❌ Error: 'map' 요소를 찾을 수 없습니다!");
                return;
@@ -23,23 +32,54 @@
                center: busanCenter,
            });
 
-           const markers = [];
-           for (let i = 0; i < 100; i++) {
-               const position = {
-                   lat: getRandomCoordinate(35.1796, 0.25),
-                   lng: getRandomCoordinate(129.0756, 0.25),
-               };
-               const marker = new google.maps.Marker({
-                   position: position,
-                   title: `위치 ${i + 1}`,
-               });
-               markers.push(marker);
-           }
+           const infoWindow = new google.maps.InfoWindow();
+           let markers = [];
 
-            new markerClusterer.MarkerClusterer({ 
-                map, 
-                markers,
-            });
+           // 검색어를 통해 기업 필터링
+           searchInput.addEventListener('input', async () => {
+               const searchQuery = searchInput.value.toLowerCase();
+               const companies = await fetchCompanyData();
+
+               // 마커를 삭제하고 새로 추가
+               markers.forEach(marker => marker.setMap(null));
+               markers = [];
+
+               companies.forEach(company => {
+                   if (company.name.toLowerCase().includes(searchQuery)) {
+                       const position = {
+                           lat: parseFloat(company.latitude),
+                           lng: parseFloat(company.longitude),
+                       };
+
+                       const marker = new google.maps.Marker({
+                           position: position,
+                           map: map,
+                           title: company.name,
+                       });
+
+                       // 마커 클릭 시 정보창 열기
+                       marker.addListener("click", () => {
+                           infoWindow.setContent(`
+                               <strong>${company.name}</strong><br>
+                               위도: ${position.lat.toFixed(5)}<br>
+                               경도: ${position.lng.toFixed(5)}
+                           `);
+                           infoWindow.open(map, marker);
+                       });
+
+                       markers.push(marker);
+                   }
+               });
+
+               // 마커 클러스터링
+               new markerClusterer.MarkerClusterer({
+                   map,
+                   markers,
+                   gridSize: 140,
+                   maxZoom: 14,
+                   minimumClusterSize: 2,
+               });
+           });
        }
 
        // HTML이 완전히 로드된 후 initMap 실행
@@ -47,24 +87,32 @@
            window.initMap = initMap;
        });
    </script>
-   <script async defer 
+
+   <script async defer
        src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&callback=initMap">
    </script>
-   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        initMap();
-    });
-</script>
+
    <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
+
    <style>
        #map {
            height: 100vh;
            width: 100%;
        }
+       #search {
+           margin: 10px;
+           padding: 10px;
+           font-size: 16px;
+           width: 200px;
+       }
    </style>
 </head>
 <body>
    <h1>Google Map - 부산시 랜덤 위치 (클러스터링)</h1>
+
+   <!-- 검색창 추가 -->
+   <input id="search" placeholder="검색...">
+
    <div id="map"></div> <!-- ❗ div#map이 실제로 존재하는지 확인 -->
 </body>
 </html>

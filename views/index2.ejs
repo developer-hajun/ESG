@@ -6,113 +6,129 @@
    <title>Google Map - Clustered Markers</title>
    <link rel="stylesheet" href="/index.css">
    <script>
-       function getRandomCoordinate(base, range) {
-           return base + (Math.random() - 0.5) * range;
-       }
+        async function fetchCompanyData() {
+            try {
+                const response = await fetch('/api/companies');
+                return await response.json();
+            } catch (error) {
+                console.error('🚨 Error fetching company data:', error);
+                return [];
+            }
+        }
+        function initMap() {
+            const mapElement = document.getElementById("map");
+            const searchInput = document.getElementById("search");
+            const sidebarElement = document.getElementById("sidebar");
 
-       function initMap() {
-           const mapElement = document.getElementById("map");
-           const sidebarElement = document.getElementById("sidebar");
+            if (!mapElement || !sidebarElement || !searchInput) {ㅁ
+                console.error("❌ 'map', 'sidebar', 'search' 요소를 찾을 수 없습니다!");
+                return;
+            }
 
-           if (!mapElement || !sidebarElement) {
-               console.error("❌ Error: 'map' 또는 'sidebar' 요소를 찾을 수 없습니다!");
-               return;
-           }
+            const busanCenter = { lat: 35.1796, lng: 129.0756 };
+            const map = new google.maps.Map(mapElement, {
+                zoom: 12,
+                center: busanCenter,
+            });
 
-           const busanCenter = { lat: 35.1796, lng: 129.0756 };
-           const map = new google.maps.Map(mapElement, {
-               zoom: 12,
-               center: busanCenter,
-           });
+            const infoWindow = new google.maps.InfoWindow();
+            let markers = [];  // 마커 배열
+            let companies = []; // 전체 회사 데이터
 
-           const infoWindow = new google.maps.InfoWindow();
-           const markers = [];
-           sidebarElement.innerHTML = ""; // 기존 리스트 초기화
+            // 🔹 마커와 사이드바를 업데이트하는 함수
+            function updateMarkers(filterText = "") {
+                // 기존 마커 제거
+                markers.forEach(marker => marker.setMap(null));
+                sidebarElement.innerHTML = ""; // 기존 리스트 초기화
+                markers = []; // 마커 배열 초기화
 
-           for (let i = 0; i < 100; i++) {
-               const position = {
-                   lat: getRandomCoordinate(35.1796, 0.25),
-                   lng: getRandomCoordinate(129.0756, 0.25),
-               };
+                companies
+                    .filter(company => company.name.toLowerCase().includes(filterText.toLowerCase()))
+                    .forEach((company, i) => {
+                        const position = {
+                            lat: parseFloat(company.latitude),
+                            lng: parseFloat(company.longitude),
+                        };
 
-               const marker = new google.maps.Marker({
-                   position: position,
-                   map: map,
-                   title: `위치 ${i + 1}`,
-               });
+                        const marker = new google.maps.Marker({
+                            position: position,
+                            map: map,
+                            title: company.name,
+                        });
 
-               // 마커 클릭 이벤트 추가
-               marker.addListener("click", () => {
-                   infoWindow.setContent(`<strong>위치 ${i + 1}</strong><br>위도: ${position.lat.toFixed(5)}<br>경도: ${position.lng.toFixed(5)}`);
-                   infoWindow.open(map, marker);
-               });
+                        marker.addListener("click", () => {
+                            infoWindow.setContent(`
+                                <strong>${company.name}</strong><br>
+                                📍 위도: ${position.lat.toFixed(5)}<br>
+                                📍 경도: ${position.lng.toFixed(5)}
+                            `);
+                            infoWindow.open(map, marker);
+                        });
 
-               markers.push(marker);
+                        markers.push(marker);
 
-               // 좌측 리스트에 추가
-               const listItem = document.createElement("div");
-               listItem.className = "list-item";
-               listItem.innerHTML = `<strong  class=" location-name">위치 ${i + 1}</strong> <br>위도: ${position.lat.toFixed(5)} | 경도: ${position.lng.toFixed(5)} <br> 응애 <br> 흥냣`;
-               listItem.addEventListener("click", () => {
-                   map.setCenter(marker.getPosition());
-                   map.setZoom(15);
-                   google.maps.event.trigger(marker, "click");
-               });
+                        const listItem = document.createElement("div");
+                        listItem.className = "list-item";
+                        listItem.innerHTML = `
+                            <strong class="location-name">${company.name}</strong><br>
+                            📍 위도: ${position.lat.toFixed(5)} | 📍 경도: ${position.lng.toFixed(5)}
+                        `;
+                        listItem.addEventListener("click", () => {
+                            map.setCenter(marker.getPosition());
+                            map.setZoom(15);
+                            google.maps.event.trigger(marker, "click");
+                        });
 
-               sidebarElement.appendChild(listItem);
-           }
+                        sidebarElement.appendChild(listItem);
+                    });
+                new markerClusterer.MarkerClusterer({ map, markers });
+            }
 
-           // 마커 클러스터링 적용
-           new markerClusterer.MarkerClusterer({ 
-               map, 
-               markers, 
-           });
-       }
+            fetchCompanyData().then(data => {
+                companies = data;
+                updateMarkers(); // 초기 마커 표시
+            });
 
-       document.addEventListener("DOMContentLoaded", () => {
-           window.initMap = initMap;
-       });
+            searchInput.addEventListener("input", (e) => {
+                updateMarkers(e.target.value); // 검색어에 맞게 마커 업데이트
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            window.initMap = initMap;
+        });
    </script>
-   <script async defer 
+
+   <script async defer
        src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&callback=initMap">
-   </script>    
-   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        initMap();
-    });
-</script>
+   </script>
    <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
 </head>
 <body>
-    <div class = "main-content">
-        <div class = "side">
+    <div class="main-content">
+        <div class="side">
             <div class="header-bar">
-                <h2 class = "header-name">ESG ANALISIS</h2>
+                <h2 class="header-name">ESG ANALYSIS</h2>
                 <div class="search-box">
-                    <input id="search">
+                    <input id="search" placeholder="검색...">
                     <div class="category-list">
-                        <select id="category" name="esg-rate">
+                        <select id="category1" name="esg-rate">
                             <option value="select">평점별</option>
-
                         </select>
-                        <select id = "category" name = "category">
-                            <option value = "select"> 예시 1</option>
-                            <option value = "select2"> 예시 2</option>
+                        <select id="category2" name="category">
+                            <option value="select">예시 1</option>
+                            <option value="select2">예시 2</option>
                         </select>
-                        <select id = "category" name = "category">
-                            <option value = "select"> 예시 2</option>
-                            <option value = "select2"> 예시 2</option>
-                        </select>
-                        <select id = "category" name = "category">
-                            <option value = "select"> 예시 3</option>
-                            <option value = "select2"> 예시 2</option>
+                        <select id="category3" name="category">
+                            <option value="select">예시 3</option>
+                            <option value="select2">예시 4</option>
                         </select>
                     </div>
                 </div>
-            </div> <!-- 위치 리스트 -->
+            </div>
             <div id="sidebar"></div> <!-- 위치 리스트 -->
         </div>
-        <div id="map"></div> <!-- 지도 --> 
+        <div id="map"></div> <!-- 지도 -->
     </div>
 </body>
 </html>
