@@ -8,16 +8,16 @@ const PORT = 3000;
 
 
 const pool = new Pool({
-  user: 'ihajun',
+  user: 'heewoong',
   host: 'localhost',
-  database: 'postgres',
+  database: 'locations',
   password: '1234',
   port: 5432,
 });
 
 app.get('/api/companies', async (req, res) => {
   try {
-    const result = await pool.query('SELECT name, latitude, longitude FROM company');
+    const result = await pool.query('SELECT name, latitude, longitude FROM locations');
     res.json(result.rows);
   } catch (err) {
     console.error(err);

@@ -1,134 +1,132 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Google Map - Clustered Markers</title>
-   <link rel="stylesheet" href="/index.css">
-   <script>
-        async function fetchCompanyData() {
-            try {
-                const response = await fetch('/api/companies');
-                return await response.json();
-            } catch (error) {
-                console.error('🚨 Error fetching company data:', error);
-                return [];
-            }
-        }
-        function initMap() {
-            const mapElement = document.getElementById("map");
-            const searchInput = document.getElementById("search");
-            const sidebarElement = document.getElementById("sidebar");
-
-            if (!mapElement || !sidebarElement || !searchInput) {ㅁ
-                console.error("❌ 'map', 'sidebar', 'search' 요소를 찾을 수 없습니다!");
-                return;
-            }
-
-            const busanCenter = { lat: 35.1796, lng: 129.0756 };
-            const map = new google.maps.Map(mapElement, {
-                zoom: 12,
-                center: busanCenter,
-            });
-
-            const infoWindow = new google.maps.InfoWindow();
-            let markers = [];  // 마커 배열
-            let companies = []; // 전체 회사 데이터
-
-            // 🔹 마커와 사이드바를 업데이트하는 함수
-            function updateMarkers(filterText = "") {
-                // 기존 마커 제거
-                markers.forEach(marker => marker.setMap(null));
-                sidebarElement.innerHTML = ""; // 기존 리스트 초기화
-                markers = []; // 마커 배열 초기화
-
-                companies
-                    .filter(company => company.name.toLowerCase().includes(filterText.toLowerCase()))
-                    .forEach((company, i) => {
-                        const position = {
-                            lat: parseFloat(company.latitude),
-                            lng: parseFloat(company.longitude),
-                        };
-
-                        const marker = new google.maps.Marker({
-                            position: position,
-                            map: map,
-                            title: company.name,
-                        });
-
-                        marker.addListener("click", () => {
-                            infoWindow.setContent(`
-                                <strong>${company.name}</strong><br>
-                                📍 위도: ${position.lat.toFixed(5)}<br>
-                                📍 경도: ${position.lng.toFixed(5)}
-                            `);
-                            infoWindow.open(map, marker);
-                        });
-
-                        markers.push(marker);
-
-                        const listItem = document.createElement("div");
-                        listItem.className = "list-item";
-                        listItem.innerHTML = `
-                            <strong class="location-name">${company.name}</strong><br>
-                            📍 위도: ${position.lat.toFixed(5)} | 📍 경도: ${position.lng.toFixed(5)}
-                        `;
-                        listItem.addEventListener("click", () => {
-                            map.setCenter(marker.getPosition());
-                            map.setZoom(15);
-                            google.maps.event.trigger(marker, "click");
-                        });
-
-                        sidebarElement.appendChild(listItem);
-                    });
-                new markerClusterer.MarkerClusterer({ map, markers });
-            }
-
-            fetchCompanyData().then(data => {
-                companies = data;
-                updateMarkers(); // 초기 마커 표시
-            });
-
-            searchInput.addEventListener("input", (e) => {
-                updateMarkers(e.target.value); // 검색어에 맞게 마커 업데이트
-            });
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            window.initMap = initMap;
-        });
-   </script>
-
-   <script async defer
-       src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&callback=initMap">
-   </script>
-   <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Google Map - Clustered Markers</title>
+  <link rel="stylesheet" href="/index.css" />
 </head>
 <body>
-    <div class="main-content">
-        <div class="side">
-            <div class="header-bar">
-                <h2 class="header-name">ESG ANALYSIS</h2>
-                <div class="search-box">
-                    <input id="search" placeholder="검색...">
-                    <div class="category-list">
-                        <select id="category1" name="esg-rate">
-                            <option value="select">평점별</option>
-                        </select>
-                        <select id="category2" name="category">
-                            <option value="select">예시 1</option>
-                            <option value="select2">예시 2</option>
-                        </select>
-                        <select id="category3" name="category">
-                            <option value="select">예시 3</option>
-                            <option value="select2">예시 4</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div id="sidebar"></div> <!-- 위치 리스트 -->
+  <div class="main-content">
+    <div class="side">
+      <div class="header-bar">
+        <h2 class="header-name">ESG ANALYSIS</h2>
+        <div class="search-box">
+          <input id="search" placeholder="검색..." />
+          <div class="category-list">
+            <select id="category1" name="esg-rate">
+              <option value="select">평점별</option>
+            </select>
+            <select id="category2" name="category">
+              <option value="select">예시 1</option>
+              <option value="select2">예시 2</option>
+            </select>
+            <select id="category3" name="category">
+              <option value="select">예시 3</option>
+              <option value="select2">예시 4</option>
+            </select>
+          </div>
         </div>
-        <div id="map"></div> <!-- 지도 -->
+      </div>
+      <div id="sidebar"></div>
     </div>
+    <div id="map"></div>
+  </div>
+
+  <!-- 🔽 아래로 옮긴 스크립트들 🔽 -->
+  <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
+  <script>
+    async function fetchCompanyData() {
+      try {
+        const response = await fetch('/api/companies');
+        return await response.json();
+      } catch (error) {
+        console.error('🚨 Error fetching company data:', error);
+        return [];
+      }
+    }
+
+    function initMap() {
+      const mapElement = document.getElementById("map");
+      const searchInput = document.getElementById("search");
+      const sidebarElement = document.getElementById("sidebar");
+
+      if (!mapElement || !sidebarElement || !searchInput) {
+        console.error("❌ 'map', 'sidebar', 'search' 요소를 찾을 수 없습니다!");
+        return;
+      }
+
+      const busanCenter = { lat: 35.1796, lng: 129.0756 };
+      const map = new google.maps.Map(mapElement, {
+        zoom: 12,
+        center: busanCenter,
+      });
+
+      const infoWindow = new google.maps.InfoWindow();
+      let markers = [];
+      let companies = [];
+
+      function updateMarkers(filterText = "") {
+        markers.forEach(marker => marker.setMap(null));
+        sidebarElement.innerHTML = "";
+        markers = [];
+
+        companies
+          .filter(company => company.name.toLowerCase().includes(filterText.toLowerCase()))
+          .forEach((company, i) => {
+            const position = {
+              lat: parseFloat(company.latitude),
+              lng: parseFloat(company.longitude),
+            };
+
+            const marker = new google.maps.Marker({
+              position: position,
+              map: map,
+              title: company.name,
+            });
+
+            marker.addListener("click", () => {
+              infoWindow.setContent(`
+                <strong>${company.name}</strong><br>
+                📍 위도: ${position.lat.toFixed(5)}<br>
+                📍 경도: ${position.lng.toFixed(5)}
+              `);
+              infoWindow.open(map, marker);
+            });
+
+            markers.push(marker);
+
+            const listItem = document.createElement("div");
+            listItem.className = "list-item";
+            listItem.innerHTML = `
+              <strong class="location-name">${company.name}</strong><br>
+              <span class="location-info-2">📍 위도: ${position.lat.toFixed(5)} | 📍 경도: ${position.lng.toFixed(5)} </span><br>
+                <span class="location-info-3">주소 예시</span>
+            `;
+            listItem.addEventListener("click", () => {
+              map.setCenter(marker.getPosition());
+              map.setZoom(15);
+              google.maps.event.trigger(marker, "click");
+            });
+
+            sidebarElement.appendChild(listItem);
+          });
+
+        new markerClusterer.MarkerClusterer({ map, markers });
+      }
+
+      fetchCompanyData().then(data => {
+        companies = data;
+        updateMarkers();
+      });
+
+      searchInput.addEventListener("input", (e) => {
+        updateMarkers(e.target.value);
+      });
+    }
+  </script>
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&callback=initMap">
+  </script>
 </body>
 </html>
