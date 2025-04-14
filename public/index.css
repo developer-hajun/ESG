@@ -30,6 +30,7 @@ body{
    height: 40px;
    width: 60px;
    font-size: 14px;
+   font-weight:bold;
    background-color:rgb(69, 178, 98);
    border:1px solid rgb(69, 178, 98);
    color: white;
@@ -46,7 +47,7 @@ body{
 }
 #sidebar {
    width: 320px;
-   height:78vh;
+   height:79vh;
    overflow-y: auto;
    background: #f8f9fa;
    padding: 0;
