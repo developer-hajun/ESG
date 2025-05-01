@@ -8,16 +8,16 @@ const PORT = 3000;
 
 
 const pool = new Pool({
-  user: 'heewoong',
+  user: 'postgres',
   host: 'localhost',
-  database: 'locations',
+  database: 'ESG',
   password: '1234',
   port: 5432,
 });
 
 app.get('/api/companies', async (req, res) => {
   try {
-    const result = await pool.query('SELECT name, latitude, longitude FROM locations');
+    const result = await pool.query('SELECT business_name, coord_x, coord_y FROM business_info');
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -33,7 +33,7 @@ app.get('/api/find', async (req, res) => {
   }
   try {
     const result = await pool.query(
-      'SELECT name, latitude, longitude FROM company WHERE name ILIKE $1',
+      'SELECT business_name, coord_x, coord_y FROM company WHERE business_name ILIKE $1',
       [`%${searchTerm}%`] // 대소문자를 구분하지 않고 검색어가 포함된 이름을 찾습니다.
     );
     res.json(result.rows);

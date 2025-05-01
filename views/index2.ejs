@@ -75,19 +75,19 @@
           .filter(company => company.name.toLowerCase().includes(filterText.toLowerCase()))
           .forEach((company, i) => {
             const position = {
-              lat: parseFloat(company.latitude),
-              lng: parseFloat(company.longitude),
+              lat: parseFloat(company.coord_x),
+              lng: parseFloat(company.coord_y),
             };
 
             const marker = new google.maps.Marker({
               position: position,
               map: map,
-              title: company.name,
+              title: company.business_name,
             });
 
             marker.addListener("click", () => {
               infoWindow.setContent(`
-                <strong>${company.name}</strong><br>
+                <strong>${company.business_name}</strong><br>
                 📍 위도: ${position.lat.toFixed(5)}<br>
                 📍 경도: ${position.lng.toFixed(5)}
               `);

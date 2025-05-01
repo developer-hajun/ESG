@@ -34,7 +34,6 @@
 
            const infoWindow = new google.maps.InfoWindow();
            let markers = [];
-
            // 검색어를 통해 기업 필터링
            searchInput.addEventListener('input', async () => {
                const searchQuery = searchInput.value.toLowerCase();
@@ -47,14 +46,14 @@
                companies.forEach(company => {
                    if (company.name.toLowerCase().includes(searchQuery)) {
                        const position = {
-                           lat: parseFloat(company.latitude),
-                           lng: parseFloat(company.longitude),
+                           lat: parseFloat(company.coord_x),
+                           lng: parseFloat(company.coord_y),
                        };
 
                        const marker = new google.maps.Marker({
                            position: position,
                            map: map,
-                           title: company.name,
+                           title: company.business_name,
                        });
 
                        // 마커 클릭 시 정보창 열기
