@@ -72,11 +72,11 @@
         markers = [];
 
         companies
-          .filter(company => company.name.toLowerCase().includes(filterText.toLowerCase()))
+          .filter(company => company.business_name.toLowerCase().includes(filterText.toLowerCase()))
           .forEach((company, i) => {
             const position = {
-              lat: parseFloat(company.coord_x),
-              lng: parseFloat(company.coord_y),
+              lat: parseFloat(company.coord_y),
+              lng: parseFloat(company.coord_x),
             };
 
             const marker = new google.maps.Marker({
@@ -99,9 +99,9 @@
             const listItem = document.createElement("div");
             listItem.className = "list-item";
             listItem.innerHTML = `
-              <strong class="location-name">${company.name}</strong><br>
+              <strong class="location-name">${company.business_name}</strong><br>
               <span class="location-info-2">📍 위도: ${position.lat.toFixed(5)} | 📍 경도: ${position.lng.toFixed(5)} </span><br>
-                <span class="location-info-3">주소 예시</span>
+                <span class="location-info-3">${company.full_road_address}</span>
             `;
             listItem.addEventListener("click", () => {
               map.setCenter(marker.getPosition());
