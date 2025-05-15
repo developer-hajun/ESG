@@ -33,6 +33,7 @@
         display: none;
         position: fixed;
         top: 50%; left: 50%;
+        width: 50%; height: 80%;
         transform: translate(-50%, -50%);
         background: white;
         border: 2px solid #444;
@@ -50,8 +51,9 @@
           <input id="companyInputB" class="select-cor" placeholder="기업명 입력" autocomplete="off">
           <div id="autocompleteB" class="autocomplete-list"></div>
         </div>
-        <button class="route-search-but">검색</button>
+        <button class="route-search-but" onclick="sendRouteRequest()">검색</button>
       </div>
+      <div id="popupMap" style="width: 100%; height: 530px; margin-top: 10px;"></div>
       <button onclick="closeModal()">닫기</button>
     </div>
     <div id="map"></div>
@@ -81,7 +83,7 @@
       }
 
       const busanCenter = { lat: 35.1796, lng: 129.0756 };
-      const map = new google.maps.Map(mapElement, {
+      window.map = new google.maps.Map(mapElement, {
         zoom: 12,
         center: busanCenter,
       });
@@ -124,8 +126,8 @@
             listItem.className = "list-item";
             listItem.innerHTML = `
               <strong class="location-name">${company.business_name}</strong><br>
-              <span class="location-info-2">📍 위도: ${position.lat.toFixed(5)} | 📍 경도: ${position.lng.toFixed(5)} </span><br>
-                <span class="location-info-3">${isNaN(company.full_road_address) || !company.full_road_address ? '주소정보없음' : company.full_road_address}</span>
+              <span class="location-info-2">${company.service_name} </span><br>
+                <span class="location-info-3">${!company.full_road_address || company.full_road_address === 'NaN' ? '주소정보없음' : company.full_road_address}</span>
             `;
             listItem.addEventListener("click", () => {
               map.setCenter(marker.getPosition());
@@ -160,5 +162,6 @@
     src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&callback=initMap">
   </script>
   <script src="/autocompany.js"></script>
+  <script src="/search-route.js"></script>
 </body>
 </html>
