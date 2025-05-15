@@ -35,6 +35,16 @@ body{
    border:1px solid rgb(69, 178, 98);
    color: white;
 }
+#routeButton{
+   height: 40px;
+   width: 80px;
+   font-size: 14px;
+   font-weight:bold;
+   background-color:rgb(69, 178, 98);
+   border:1px solid rgb(69, 178, 98);
+   color: white;
+
+}
 .main-content {
    display: flex;
    height: 100vh;
@@ -72,4 +82,26 @@ body{
 .location-name{
    font-weight:bold;
    font-size:20px;
+}
+.select-cor{
+   width:300px;
+   height: 30px;
+}
+.autocomplete-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  z-index: 10000;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.autocomplete-list div {
+  padding: 8px;
+  cursor: pointer;
+}
+.autocomplete-list div:hover {
+  background: #eee;
 }
