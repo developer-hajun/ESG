@@ -19,16 +19,40 @@
             </select>
             <select id="category" name="category">
               <option value="select">예시 1</option>
-              <option value="select2">예시 2</option>
+              <option value="select">예시 2</option>
             </select>
-            <select id="category" name="category">
-              <option value="select">예시 3</option>
-              <option value="select2">예시 4</option>
-            </select>
+              <button id="routeButton">경로 탐색</button>
           </div>
         </div>
       </div>
       <div id="sidebar"></div>
+    </div>
+
+    <!-- 모달 창 HTML -->
+    <div id="popupModal" style="
+        display: none;
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        border: 2px solid #444;
+        border-radius: 8px;
+        padding: 20px;
+        z-index: 9999;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+      <h3>경로 탐색 도구</h3>
+      <div>
+        <div style="position: relative;">
+          <input id="companyInputA" class="select-cor" placeholder="기업명 입력" autocomplete="off">
+          <div id="autocompleteA" class="autocomplete-list"></div>
+        </div>
+        <div style="position: relative;">
+          <input id="companyInputB" class="select-cor" placeholder="기업명 입력" autocomplete="off">
+          <div id="autocompleteB" class="autocomplete-list"></div>
+        </div>
+        <button class="route-search-but">검색</button>
+      </div>
+      <button onclick="closeModal()">닫기</button>
     </div>
     <div id="map"></div>
   </div>
@@ -101,7 +125,7 @@
             listItem.innerHTML = `
               <strong class="location-name">${company.business_name}</strong><br>
               <span class="location-info-2">📍 위도: ${position.lat.toFixed(5)} | 📍 경도: ${position.lng.toFixed(5)} </span><br>
-                <span class="location-info-3">${company.full_road_address}</span>
+                <span class="location-info-3">${isNaN(company.full_road_address) || !company.full_road_address ? '주소정보없음' : company.full_road_address}</span>
             `;
             listItem.addEventListener("click", () => {
               map.setCenter(marker.getPosition());
@@ -124,9 +148,17 @@
         updateMarkers(e.target.value);
       });
     }
+    document.getElementById("routeButton").addEventListener("click", function () {
+      document.getElementById("popupModal").style.display = "block";
+    });
+
+    function closeModal() {
+      document.getElementById("popupModal").style.display = "none";
+    }
   </script>
   <script async defer
     src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&callback=initMap">
   </script>
+  <script src="/autocompany.js"></script>
 </body>
 </html>
