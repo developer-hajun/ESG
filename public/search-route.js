@@ -1,70 +1,107 @@
-let popupMap = null;
-let popupMarkers = [];
 
-function sendRouteRequest() {
-  const nameA = document.getElementById("companyInputA").value.trim();
-  const nameB = document.getElementById("companyInputB").value.trim();
+let popupMapInstance;
+let directionsService;
+let directionsRendererAtoW;
+let directionsRendererWtoB;
 
-  if (!nameA || !nameB) {
+async function sendRouteRequest() {
+  const companyA = document.getElementById("companyInputA").value;
+  const companyB = document.getElementById("companyInputB").value;
+
+  if (!companyA || !companyB) {
     alert("두 기업명을 모두 입력해주세요.");
     return;
   }
 
-  fetch("/api/route-search", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ companyA: nameA, companyB: nameB })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (!data.companyA || !data.companyB || !data.bestWarehouse) {
-        alert("경로 데이터를 찾을 수 없습니다.");
-        return;
-      }
-
-      const { companyA, companyB, bestWarehouse } = data;
-
-      // 1️⃣ 팝업 지도 없으면 생성
-      if (!popupMap) {
-        popupMap = new google.maps.Map(document.getElementById("popupMap"), {
-          center: { lat: parseFloat(companyA.coord_y), lng: parseFloat(companyA.coord_x) },
-          zoom: 8
-        });
-      }
-
-      // 2️⃣ 기존 마커 제거
-      popupMarkers.forEach(marker => marker.setMap(null));
-      popupMarkers = [];
-
-      // 3️⃣ 마커 생성 함수
-      const addPopupMarker = (lat, lng, label, color) => {
-        const marker = new google.maps.Marker({
-          position: { lat: parseFloat(lat), lng: parseFloat(lng) },
-          map: popupMap,
-          title: label,
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 8,
-            fillColor: color,
-            fillOpacity: 1,
-            strokeWeight: 1
-          }
-        });
-        popupMarkers.push(marker);
-      };
-
-      // 4️⃣ A, 창고, B 마커 생성
-      addPopupMarker(companyA.coord_y, companyA.coord_x, companyA.business_name, "blue");
-      addPopupMarker(bestWarehouse.coord_y, bestWarehouse.coord_x, bestWarehouse.business_name, "orange");
-      addPopupMarker(companyB.coord_y, companyB.coord_x, companyB.business_name, "green");
-
-      // 5️⃣ 팝업 지도 중심 조정
-      const midLat = (parseFloat(companyA.coord_y) + parseFloat(companyB.coord_y)) / 2;
-      const midLng = (parseFloat(companyA.coord_x) + parseFloat(companyB.coord_x)) / 2;
-      popupMap.setCenter({ lat: midLat, lng: midLng });
-
-    })
-    .catch(err => {
-      console.error("❌ 서버 통신 오류:", err);
+  try {
+    const response = await fetch('/api/route-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ companyA, companyB })
     });
+
+    const data = await response.json();
+    console.log(data)
+
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
+    openModal(); // 팝업 띄우기
+    drawRouteOnMap(data); // 지도에 경로 표시
+  } catch (err) {
+    console.error("❌ 오류:", err);
+    alert("서버 오류가 발생했습니다.");
+  }
+}
+
+function drawRouteOnMap(data) {
+  const { companyA, companyB, bestWarehouse } = data;
+
+  const coordA = { lat: parseFloat(companyA.coord_y), lng: parseFloat(companyA.coord_x) };
+  const coordW = { lat: parseFloat(bestWarehouse.coord_y), lng: parseFloat(bestWarehouse.coord_x) };
+  const coordB = { lat: parseFloat(companyB.coord_y), lng: parseFloat(companyB.coord_x) };
+
+  // 지도 초기화
+  if (!popupMapInstance) {
+    popupMapInstance = new google.maps.Map(document.getElementById("popupMap"), {
+      center: coordW,
+      zoom: 12,
+    });
+  }
+
+  // DirectionsService/Renderer 초기화
+  directionsService = new google.maps.DirectionsService();
+
+  // 이전 경로 제거
+  if (directionsRendererAtoW) directionsRendererAtoW.setMap(null);
+  if (directionsRendererWtoB) directionsRendererWtoB.setMap(null);
+
+  directionsRendererAtoW = new google.maps.DirectionsRenderer({ suppressMarkers: false });
+  directionsRendererWtoB = new google.maps.DirectionsRenderer({
+    suppressMarkers: false,
+    polylineOptions: { strokeColor: '#0000FF' }
+  });
+
+  directionsRendererAtoW.setMap(popupMapInstance);
+  directionsRendererWtoB.setMap(popupMapInstance);
+
+  // 경로 1: A → W
+  directionsService.route({
+    origin: coordA,
+    destination: coordW,
+    travelMode: google.maps.TravelMode.TRANSIT
+  }, (result1, status1) => {
+    if (status1 === 'OK') {
+      directionsRendererAtoW.setDirections(result1);
+    } else {
+      alert("회사 A → 창고 경로를 불러올 수 없습니다.");
+    }
+  });
+
+  // 경로 2: W → B
+  directionsService.route({
+    origin: coordW,
+    destination: coordB,
+    travelMode: google.maps.TravelMode.TRANSIT
+  }, (result2, status2) => {
+    if (status2 === 'OK') {
+      directionsRendererWtoB.setDirections(result2);
+    } else {
+      alert("창고 → 회사 B 경로를 불러올 수 없습니다.");
+    }
+  });
+}
+
+function openModal() {
+  document.getElementById("popupModal").style.display = "block";
+}
+
+function closeModal() {
+  document.getElementById("popupModal").style.display = "none";
+
+  // 팝업 닫을 때 지도 초기화
+  if (directionsRendererAtoW) directionsRendererAtoW.setMap(null);
+  if (directionsRendererWtoB) directionsRendererWtoB.setMap(null);
 }
