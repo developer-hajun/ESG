@@ -1,168 +1,169 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Google Map - Clustered Markers</title>
-  <link rel="stylesheet" href="/index.css" />
-</head>
-<body>
-  <div class="main-content">
-    <div class="side">
-      <div class="header-bar">
-        <h2 class="header-name">ESG ANALYSIS</h2>
-        <div class="search-box">
-          <input id="search" placeholder="검색..." />
-          <div class="category-list">
-            <select id="category" name="esg-rate">
-              <option value="select">평점별</option>
-            </select>
-            <select id="category" name="category">
-              <option value="select">예시 1</option>
-              <option value="select">예시 2</option>
-            </select>
-              <button id="routeButton">경로 탐색</button>
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Google Map - Clustered Markers</title>
+    <link rel="stylesheet" href="/index.css" />
+    <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=ac73da0bc285654e5caf4d876477698c&autoload=true&libraries=services"></script>
+  </head>
+  <body>
+    <div class="main-content">
+      <div class="side">
+        <div class="header-bar">
+          <h2 class="header-name">ESG ANALYSIS</h2>
+          <div class="search-box">
+            <input id="search" placeholder="검색..." />
+            <div class="category-list">
+              <select id="category" name="esg-rate">
+                <option value="select">평점별</option>
+              </select>
+              <select id="category" name="category">
+                <option value="select">예시 1</option>
+                <option value="select">예시 2</option>
+              </select>
+                <button id="routeButton">경로 탐색</button>
+            </div>
           </div>
         </div>
+        <div id="sidebar"></div>
       </div>
-      <div id="sidebar"></div>
+
+      <!-- 모달 창 HTML -->
+      <div id="popupModal" style="
+          display: none;
+          position: fixed;
+          top: 50%; left: 50%;
+          width: 50%; height: 80%;
+          transform: translate(-50%, -50%);
+          background: white;
+          border: 2px solid #444;
+          border-radius: 8px;
+          padding: 20px;
+          z-index: 9999;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+        <h3>경로 탐색 도구</h3>
+        <div>
+          <div style="position: relative;">
+            <input id="companyInputA" class="select-cor" placeholder="기업명 입력" autocomplete="off">
+            <div id="autocompleteA" class="autocomplete-list"></div>
+          </div>
+          <div style="position: relative;">
+            <input id="companyInputB" class="select-cor" placeholder="기업명 입력" autocomplete="off">
+            <div id="autocompleteB" class="autocomplete-list"></div>
+          </div>
+          <button class="route-search-but" onclick="getCarDirection()">검색</button>
+        </div>
+        <div id="kakaoMap" style="width:100%; height:70%;"></div>
+        <button onclick="closeModal()">닫기</button>
+      </div>
+      <div id="map"></div>
     </div>
 
-    <!-- 모달 창 HTML -->
-    <div id="popupModal" style="
-        display: none;
-        position: fixed;
-        top: 50%; left: 50%;
-        width: 50%; height: 80%;
-        transform: translate(-50%, -50%);
-        background: white;
-        border: 2px solid #444;
-        border-radius: 8px;
-        padding: 20px;
-        z-index: 9999;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
-      <h3>경로 탐색 도구</h3>
-      <div>
-        <div style="position: relative;">
-          <input id="companyInputA" class="select-cor" placeholder="기업명 입력" autocomplete="off">
-          <div id="autocompleteA" class="autocomplete-list"></div>
-        </div>
-        <div style="position: relative;">
-          <input id="companyInputB" class="select-cor" placeholder="기업명 입력" autocomplete="off">
-          <div id="autocompleteB" class="autocomplete-list"></div>
-        </div>
-        <button class="route-search-but" onclick="sendRouteRequest()">검색</button>
-      </div>
-      <div id="popupMap" style="width: 100%; height: 530px; margin-top: 10px;"></div>
-      <button onclick="closeModal()">닫기</button>
-    </div>
-    <div id="map"></div>
-  </div>
-
-  <!-- 🔽 아래로 옮긴 스크립트들 🔽 -->
-  <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
-  <script>
-    async function fetchCompanyData() {
-      try {
-        const response = await fetch('/api/companies');
-        return await response.json();
-      } catch (error) {
-        console.error('🚨 Error fetching company data:', error);
-        return [];
-      }
-    }
-
-    function initMap() {
-      const mapElement = document.getElementById("map");
-      const searchInput = document.getElementById("search");
-      const sidebarElement = document.getElementById("sidebar");
-
-      if (!mapElement || !sidebarElement || !searchInput) {
-        console.error("❌ 'map', 'sidebar', 'search' 요소를 찾을 수 없습니다!");
-        return;
+    <!-- 🔽 아래로 옮긴 스크립트들 🔽 -->
+    <script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
+    <script>
+      async function fetchCompanyData() {
+        try {
+          const response = await fetch('/api/companies');
+          return await response.json();
+        } catch (error) {
+          console.error('🚨 Error fetching company data:', error);
+          return [];
+        }
       }
 
-      const busanCenter = { lat: 35.1796, lng: 129.0756 };
-      window.map = new google.maps.Map(mapElement, {
-        zoom: 12,
-        center: busanCenter,
-      });
+      function initMap() {
+        const mapElement = document.getElementById("map");
+        const searchInput = document.getElementById("search");
+        const sidebarElement = document.getElementById("sidebar");
 
-      const infoWindow = new google.maps.InfoWindow();
-      let markers = [];
-      let companies = [];
+        if (!mapElement || !sidebarElement || !searchInput) {
+          console.error("❌ 'map', 'sidebar', 'search' 요소를 찾을 수 없습니다!");
+          return;
+        }
 
-      function updateMarkers(filterText = "") {
-        markers.forEach(marker => marker.setMap(null));
-        sidebarElement.innerHTML = "";
-        markers = [];
+        const busanCenter = { lat: 35.1796, lng: 129.0756 };
+        window.map = new google.maps.Map(mapElement, {
+          zoom: 12,
+          center: busanCenter,
+        });
 
-        companies
-          .filter(company => company.business_name.toLowerCase().includes(filterText.toLowerCase()))
-          .forEach((company, i) => {
-            const position = {
-              lat: parseFloat(company.coord_y),
-              lng: parseFloat(company.coord_x),
-            };
+        const infoWindow = new google.maps.InfoWindow();
+        let markers = [];
+        let companies = [];
 
-            const marker = new google.maps.Marker({
-              position: position,
-              map: map,
-              title: company.business_name,
+        function updateMarkers(filterText = "") {
+          markers.forEach(marker => marker.setMap(null));
+          sidebarElement.innerHTML = "";
+          markers = [];
+
+          companies
+            .filter(company => company.business_name.toLowerCase().includes(filterText.toLowerCase()))
+            .forEach((company, i) => {
+              const position = {
+                lat: parseFloat(company.coord_y),
+                lng: parseFloat(company.coord_x),
+              };
+
+              const marker = new google.maps.Marker({
+                position: position,
+                map: map,
+                title: company.business_name,
+              });
+
+              marker.addListener("click", () => {
+                infoWindow.setContent(`
+                  <strong>${company.business_name}</strong><br>
+                  📍 위도: ${position.lat.toFixed(5)}<br>
+                  📍 경도: ${position.lng.toFixed(5)}
+                `);
+                infoWindow.open(map, marker);
+              });
+
+              markers.push(marker);
+
+              const listItem = document.createElement("div");
+              listItem.className = "list-item";
+              listItem.innerHTML = `
+                <strong class="location-name">${company.business_name}</strong><br>
+                <span class="location-info-2">${company.service_name} </span><br>
+                  <span class="location-info-3">${!company.full_road_address || company.full_road_address === 'NaN' ? '주소정보없음' : company.full_road_address}</span>
+              `;
+              listItem.addEventListener("click", () => {
+                map.setCenter(marker.getPosition());
+                map.setZoom(15);
+                google.maps.event.trigger(marker, "click");
+              });
+
+              sidebarElement.appendChild(listItem);
             });
 
-            marker.addListener("click", () => {
-              infoWindow.setContent(`
-                <strong>${company.business_name}</strong><br>
-                📍 위도: ${position.lat.toFixed(5)}<br>
-                📍 경도: ${position.lng.toFixed(5)}
-              `);
-              infoWindow.open(map, marker);
-            });
+          new markerClusterer.MarkerClusterer({ map, markers });
+        }
 
-            markers.push(marker);
+        fetchCompanyData().then(data => {
+          companies = data;
+          updateMarkers();
+        });
 
-            const listItem = document.createElement("div");
-            listItem.className = "list-item";
-            listItem.innerHTML = `
-              <strong class="location-name">${company.business_name}</strong><br>
-              <span class="location-info-2">${company.service_name} </span><br>
-                <span class="location-info-3">${!company.full_road_address || company.full_road_address === 'NaN' ? '주소정보없음' : company.full_road_address}</span>
-            `;
-            listItem.addEventListener("click", () => {
-              map.setCenter(marker.getPosition());
-              map.setZoom(15);
-              google.maps.event.trigger(marker, "click");
-            });
-
-            sidebarElement.appendChild(listItem);
-          });
-
-        new markerClusterer.MarkerClusterer({ map, markers });
+        searchInput.addEventListener("input", (e) => {
+          updateMarkers(e.target.value);
+        });
       }
-
-      fetchCompanyData().then(data => {
-        companies = data;
-        updateMarkers();
+      document.getElementById("routeButton").addEventListener("click", function () {
+        document.getElementById("popupModal").style.display = "block";
       });
 
-      searchInput.addEventListener("input", (e) => {
-        updateMarkers(e.target.value);
-      });
-    }
-    document.getElementById("routeButton").addEventListener("click", function () {
-      document.getElementById("popupModal").style.display = "block";
-    });
-
-    function closeModal() {
-      document.getElementById("popupModal").style.display = "none";
-    }
-  </script>
-  <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&callback=initMap">
-  </script>
-  <script src="/autocompany.js"></script>
-  <script src="/search-route.js"></script>
-  
-</body>
-</html>
+      function closeModal() {
+        document.getElementById("popupModal").style.display = "none";
+      }
+    </script>
+    <script async defer
+      src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&callback=initMap">
+    </script>
+    <script src="/autocompany.js"></script>
+    <script src="/search-route.js"></script>
+    
+  </body>
+  </html>
