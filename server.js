@@ -50,7 +50,7 @@ function euclideanDistance(lat1, lng1, lat2, lng2) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-app.post('/api/route-search', async (req, res) => {
+app.post('/api/route-search-kakao', async (req, res) => {
   const { companyA, companyB } = req.body;
 
   if (!companyA || !companyB) {
@@ -110,6 +110,38 @@ app.post('/api/route-search', async (req, res) => {
     res.status(500).json({ error: "서버 오류" });
   }
 });
+app.post('/api/get-coordinates', async (req, res) => {
+  const { companyA, companyB } = req.body;
+
+  if (!companyA || !companyB) {
+    return res.status(400).json({ error: "두 기업명을 모두 입력해주세요." });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT business_name, coord_x, coord_y 
+       FROM business_info 
+       WHERE business_name = $1 OR business_name = $2`,
+      [companyA, companyB]
+    );
+
+    if (result.rows.length !== 2) {
+      return res.status(404).json({ error: "기업을 찾을 수 없습니다." });
+    }
+
+    const company1 = result.rows.find(c => c.business_name === companyA);
+    const company2 = result.rows.find(c => c.business_name === companyB);
+
+    res.json({
+      companyA: company1,
+      companyB: company2
+    });
+  } catch (err) {
+    console.error("❌ DB 오류:", err);
+    res.status(500).json({ error: "서버 오류" });
+  }
+});
+
 
 
 app.get("/", (req, res) => {
