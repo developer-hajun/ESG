@@ -2,37 +2,6 @@
   let polylineAtoW = null;
   let polylineWtoB = null;
 
-  async function sendRouteRequest() {
-    const companyA = document.getElementById("companyInputA").value;
-    const companyB = document.getElementById("companyInputB").value;
-
-    if (!companyA || !companyB) {
-      alert("두 기업명을 모두 입력해주세요.");
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/route-search-kakao', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyA, companyB })
-      });
-
-      const data = await response.json();
-      if (data.error) {
-        alert(data.error);
-        return;
-      }
-
-      openModal();
-      drawRouteOnKakaoMap(data);
-
-    } catch (err) {
-      console.error("❌ 오류:", err);
-      alert("서버 오류가 발생했습니다.");
-    }
-  }
-
   function openModal() {
     document.getElementById("popupModal").style.display = "block";
   }
@@ -76,6 +45,11 @@
           name: data.companyB.business_name,
           lng: data.companyB.coord_x,
           lat: data.companyB.coord_y
+        },
+        viaPoint:{
+          name: data.bestWarehouse.business_name,
+          lng: data.bestWarehouse.coord_x,
+          lat: data.bestWarehouse.coord_y
         }
       };
       // 2. Kakao API 호출
@@ -91,6 +65,7 @@
     const url = 'https://apis-navi.kakaomobility.com/v1/directions';
     const origin = `${pointObj.startPoint.lng},${pointObj.startPoint.lat}`;
     const destination = `${pointObj.endPoint.lng},${pointObj.endPoint.lat}`;
+    const waypoint = `${pointObj.viaPoint.lng},${pointObj.viaPoint.lat}`;
 
     if (!kakaoMapInstance) {
       kakaoMapInstance = new kakao.maps.Map(document.getElementById("kakaoMap"), {
@@ -105,10 +80,11 @@
 
     const queryParams = new URLSearchParams({
       origin: origin,
-      destination: destination
+      destination: destination,
+      waypoints: waypoint
     });
     const requestUrl = `${url}?${queryParams}`;
-
+    console.log(requestUrl);
     try {
       const response = await fetch(requestUrl, {
         method: 'GET',
@@ -126,16 +102,18 @@
         return;
       }
 
-      const roads = data.routes[0].sections[0].roads;
+      const sections = data.routes[0].sections;
       const linePath = [];
 
-      roads.forEach(road => {
-        const v = road.vertexes;
-        for (let i = 0; i < v.length; i += 2) {
-          if (v[i + 1] !== undefined) {
-            linePath.push(new kakao.maps.LatLng(v[i + 1], v[i]));
+      sections.forEach(section => {
+        section.roads.forEach(road => {
+          const v = road.vertexes;
+          for (let i = 0; i < v.length; i += 2) {
+            if (v[i + 1] !== undefined) {
+              linePath.push(new kakao.maps.LatLng(v[i + 1], v[i]));
+            }
           }
-        }
+        });
       });
 
       if (!linePath.length) {
@@ -152,6 +130,21 @@
         strokeStyle: 'solid'
       });
       polyline.setMap(kakaoMapInstance || map);
+      const warehouseMarker = new kakao.maps.Marker({
+        position: new kakao.maps.LatLng(pointObj.viaPoint.lat, pointObj.viaPoint.lng),
+        map: kakaoMapInstance,
+        title: `출발지: ${pointObj.viaPoint.name}`
+      });
+      const Origin = new kakao.maps.Marker({
+        position: new kakao.maps.LatLng(pointObj.startPoint.lat, pointObj.startPoint.lng),
+        map: kakaoMapInstance,
+        title: `경유지: ${pointObj.startPoint.name}`
+      });
+      const Destination = new kakao.maps.Marker({
+        position: new kakao.maps.LatLng(pointObj.endPoint.lat, pointObj.endPoint.lng),
+        map: kakaoMapInstance,
+        title: `도착지: ${pointObj.endPoint.name}`
+      });
     } catch (error) {
       console.error('Error:', error);
     }

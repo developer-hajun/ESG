@@ -125,16 +125,38 @@ app.post('/api/get-coordinates', async (req, res) => {
       [companyA, companyB]
     );
 
-    if (result.rows.length !== 2) {
-      return res.status(404).json({ error: "기업을 찾을 수 없습니다." });
-    }
-
     const company1 = result.rows.find(c => c.business_name === companyA);
     const company2 = result.rows.find(c => c.business_name === companyB);
 
+    const warehouseResult = await pool.query(
+      `SELECT business_name, coord_x, coord_y, full_road_address 
+       FROM business_info 
+       WHERE service_name = '물류창고업체'`
+    );
+    let bestWarehouse = null;
+    let minTotalDistance = Infinity;
+
+    if (result.rows.length !== 2) {
+      return res.status(404).json({ error: "기업을 찾을 수 없습니다." });
+    }
+    warehouseResult.rows.forEach(wh => {
+      const distAtoW = euclideanDistance(company1.coord_y, company1.coord_x, wh.coord_y, wh.coord_x);
+      const distWtoB = euclideanDistance(wh.coord_y, wh.coord_x, company2.coord_y, company2.coord_x);
+      const totalDist = distAtoW + distWtoB;
+
+      if (totalDist < minTotalDistance) {
+        minTotalDistance = totalDist;
+        bestWarehouse = {
+          ...wh,
+          total_distance: totalDist.toFixed(6)
+        };
+      }
+    });
+
     res.json({
       companyA: company1,
-      companyB: company2
+      companyB: company2,
+      bestWarehouse: bestWarehouse
     });
   } catch (err) {
     console.error("❌ DB 오류:", err);
