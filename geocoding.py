@@ -35,7 +35,7 @@ try:
     cursor = conn.cursor()
 
     # ❶ full_road_address를 포함한 데이터 조회
-    cursor.execute("SELECT id, full_road_address FROM business_info")
+    cursor.execute("SELECT id, full_road_address FROM business_info WHERE id >=14831")
     rows = cursor.fetchall()
 
     for row in rows:
