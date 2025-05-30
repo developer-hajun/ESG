@@ -50,6 +50,16 @@
           name: data.bestWarehouse.business_name,
           lng: data.bestWarehouse.coord_x,
           lat: data.bestWarehouse.coord_y
+        },
+        carrierAtoW: {
+          name: data.carrierAtoW.business_name,
+          lng: data.carrierAtoW.coord_x,
+          lat: data.carrierAtoW.coord_y
+        },
+        carrierWtoB: {
+          name: data.carrierWtoB.business_name,
+          lng: data.carrierWtoB.coord_x,
+          lat: data.carrierWtoB.coord_y
         }
       };
       // 2. Kakao API 호출
@@ -125,7 +135,7 @@
       const polyline = new kakao.maps.Polyline({
         path: linePath,
         strokeWeight: 5,
-        strokeColor: '#000000',
+        strokeColor: 'rgb(69, 178, 98)',
         strokeOpacity: 0.7,
         strokeStyle: 'solid'
       });
@@ -144,6 +154,16 @@
         position: new kakao.maps.LatLng(pointObj.endPoint.lat, pointObj.endPoint.lng),
         map: kakaoMapInstance,
         title: `도착지: ${pointObj.endPoint.name}`
+      });
+      const DeliveryA = new kakao.maps.Marker({
+        position: new kakao.maps.LatLng(pointObj.carrierAtoW.lat, pointObj.carrierAtoW.lng),
+        map: kakaoMapInstance,
+        title: `${pointObj.startPoint.name}→${pointObj.viaPoint.name}: ${pointObj.carrierAtoW.name}`
+      });
+      const DeliveryB = new kakao.maps.Marker({
+        position: new kakao.maps.LatLng(pointObj.carrierWtoB.lat, pointObj.carrierWtoB.lng),
+        map: kakaoMapInstance,
+        title: `${pointObj.viaPoint.name}→${pointObj.endPoint.name}: ${pointObj.carrierWtoB.name}`
       });
     } catch (error) {
       console.error('Error:', error);
