@@ -49,67 +49,47 @@ function euclideanDistance(lat1, lng1, lat2, lng2) {
   const dy = lat2 - lat1;
   return Math.sqrt(dx * dx + dy * dy);
 }
+async function getRealDistance(lat1, lng1, lat2, lng2) {
+  const response = await fetch(`https://apis-navi.kakaomobility.com/v1/directions?origin=${lng1},${lat1}&destination=${lng2},${lat2}&priority=DISTANCE`, {
+    method: 'GET',
+    headers: {
+      'Authorization': 'KakaoAK d050db88ea871e4352d56b8448f3fcaf'
+    }
+  });
 
-app.post('/api/route-search-kakao', async (req, res) => {
-  const { companyA, companyB } = req.body;
+  const data = await response.json();
+  console.log('api결과:', data);
+  return data.routes?.[0]?.summary?.distance || null;
+}
+async function findBestWarehouse(companyA, companyB, warehouses) {
+  // Step 1: 유클리디안 거리 기준 5개 필터
+  const topCandidates = warehouses
+    .map(wh => ({
+      ...wh,
+      approxDist: euclideanDistance(companyA.lat, companyA.lng, wh.lat, wh.lng)
+                + euclideanDistance(wh.lat, wh.lng, companyB.lat, companyB.lng)
+    }))
+    .sort((a, b) => a.approxDist - b.approxDist)
+    .slice(0, 5);
 
-  if (!companyA || !companyB) {
-    return res.status(400).json({ error: "두 기업명을 모두 입력해야 합니다." });
+  // Step 2: 도로 거리 기반으로 재계산
+  let bestWarehouse = null;
+  let minRealDist = Infinity;
+
+  for (const wh of topCandidates) {
+    const distAtoW = await getRealDistance(companyA.lat, companyA.lng, wh.lat, wh.lng);
+    const distWtoB = await getRealDistance(wh.lat, wh.lng, companyB.lat, companyB.lng);
+    const total = distAtoW + distWtoB;
+
+    if (total < minRealDist) {
+      minRealDist = total;
+      bestWarehouse = { ...wh, totalDistance: total };
+    }
   }
 
-  try {
-    const companyResult = await pool.query(
-      `SELECT business_name, coord_x, coord_y 
-       FROM business_info 
-       WHERE business_name = $1 OR business_name = $2`,
-      [companyA, companyB]
-    );
+  return bestWarehouse;
+}
 
-    if (companyResult.rows.length !== 2) {
-      return res.status(404).json({ error: "기업을 찾을 수 없습니다." });
-    }
-
-    const company1 = companyResult.rows.find(c => c.business_name === companyA);
-    const company2 = companyResult.rows.find(c => c.business_name === companyB);
-
-    const warehouseResult = await pool.query(
-      `SELECT business_name, coord_x, coord_y, full_road_address 
-       FROM business_info 
-       WHERE service_name = '물류창고업체'`
-    );
-
-    if (warehouseResult.rows.length === 0) {
-      return res.status(404).json({ error: "창고 데이터가 없습니다." });
-    }
-
-    let bestWarehouse = null;
-    let minTotalDistance = Infinity;
-
-    warehouseResult.rows.forEach(wh => {
-      const distAtoW = euclideanDistance(company1.coord_y, company1.coord_x, wh.coord_y, wh.coord_x);
-      const distWtoB = euclideanDistance(wh.coord_y, wh.coord_x, company2.coord_y, company2.coord_x);
-      const totalDist = distAtoW + distWtoB;
-
-      if (totalDist < minTotalDistance) {
-        minTotalDistance = totalDist;
-        bestWarehouse = {
-          ...wh,
-          total_distance: totalDist.toFixed(6)
-        };
-      }
-    });
-
-    res.json({
-      companyA: company1,
-      companyB: company2,
-      bestWarehouse: bestWarehouse
-    });
-
-  } catch (err) {
-    console.error("❌ DB 에러:", err);
-    res.status(500).json({ error: "서버 오류" });
-  }
-});
 app.post('/api/get-coordinates', async (req, res) => {
   const { companyA, companyB } = req.body;
 
@@ -139,16 +119,63 @@ app.post('/api/get-coordinates', async (req, res) => {
     if (result.rows.length !== 2) {
       return res.status(404).json({ error: "기업을 찾을 수 없습니다." });
     }
-    warehouseResult.rows.forEach(wh => {
-      const distAtoW = euclideanDistance(company1.coord_y, company1.coord_x, wh.coord_y, wh.coord_x);
-      const distWtoB = euclideanDistance(wh.coord_y, wh.coord_x, company2.coord_y, company2.coord_x);
+    const top5Warehouses = warehouseResult.rows
+      .map(wh => {
+        const approxDist = euclideanDistance(company1.coord_y, company1.coord_x, wh.coord_y, wh.coord_x)
+                        + euclideanDistance(wh.coord_y, wh.coord_x, company2.coord_y, company2.coord_x);
+        return { ...wh, approxDist };
+      })
+      .sort((a, b) => a.approxDist - b.approxDist)
+      .slice(0, 5);
+
+    for (const wh of top5Warehouses) {
+      const distAtoW = await getRealDistance(company1.coord_y, company1.coord_x, wh.coord_y, wh.coord_x);
+      const distWtoB = await getRealDistance(wh.coord_y, wh.coord_x, company2.coord_y, company2.coord_x);
       const totalDist = distAtoW + distWtoB;
 
       if (totalDist < minTotalDistance) {
         minTotalDistance = totalDist;
         bestWarehouse = {
           ...wh,
-          total_distance: totalDist.toFixed(6)
+          total_distance: totalDist.toFixed(2),
+          distAtoW: distAtoW.toFixed(2),
+          distWtoB: distWtoB.toFixed(2)
+        };
+      }
+}
+
+    const carrierResult = await pool.query(
+      `SELECT business_name, coord_x, coord_y
+      FROM business_info 
+      WHERE service_name = '국제물류주선업'`
+    );
+
+    let bestCarrierAtoW = null;
+    let minDistAtoW = Infinity;
+
+    carrierResult.rows.forEach(c => {
+      const dist = euclideanDistance(company1.coord_y, company1.coord_x, c.coord_y, c.coord_x);
+      if (dist < minDistAtoW) {
+        minDistAtoW = dist;
+        bestCarrierAtoW = {
+          ...c,
+          distance: dist.toFixed(6)
+        };
+      }
+    });
+    console.log('result:',carrierResult);
+    console.log('best:',bestWarehouse);
+
+    let bestCarrierWtoB = null;
+    let minDistWtoB = Infinity;
+
+    carrierResult.rows.forEach(c => {
+      const dist = euclideanDistance(bestWarehouse.coord_y, bestWarehouse.coord_x, c.coord_y, c.coord_x);
+      if (dist < minDistWtoB) {
+        minDistWtoB = dist;
+        bestCarrierWtoB = {
+          ...c,
+          distance: dist.toFixed(6)
         };
       }
     });
@@ -156,7 +183,9 @@ app.post('/api/get-coordinates', async (req, res) => {
     res.json({
       companyA: company1,
       companyB: company2,
-      bestWarehouse: bestWarehouse
+      bestWarehouse: bestWarehouse,
+      carrierAtoW: bestCarrierAtoW,
+      carrierWtoB: bestCarrierWtoB
     });
   } catch (err) {
     console.error("❌ DB 오류:", err);
