@@ -93,7 +93,6 @@ body{
   left: 0;
   right: 0;
   background: white;
-  border: 1px solid #ccc;
   z-index: 10000;
   max-height: 200px;
   overflow-y: auto;
@@ -104,4 +103,56 @@ body{
 }
 .autocomplete-list div:hover {
   background: #eee;
+}
+.popup-banner {
+  background-color: rgb(69, 178, 98);  /* 연한 초록 */
+  border: 2px solid #48a758;
+  border-radius:8px;
+  padding: 20px 20px 0px 20px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  font-family: 'Segoe UI', sans-serif;
+  height: 26%;
+}
+
+.popup-banner h3 {
+  color: white;
+  margin-bottom: 15px;
+}
+
+.select-cor {
+  width: 400px;
+  padding: 0;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  height: 35px;
+  border: 1px solid #e2e2e2;
+}
+
+.autocomplete-list {
+  display: none;
+  background: white;
+  border: 1px solid #ccc;
+  position: absolute;
+  width: 400px;
+  max-height: 120px;
+  overflow-y: auto;
+  z-index: 999;
+}
+
+.route-search-but {
+  width: 400px;
+  padding: 10px 0;
+  background-color: rgb(69, 178, 98);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.route-search-but:hover {
+  background-color: #3c924b;
+}
+#departure_time{
+   height: 30px;
 }
