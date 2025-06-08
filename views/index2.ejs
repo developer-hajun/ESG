@@ -33,27 +33,31 @@
         display: none;
         position: fixed;
         top: 50%; left: 50%;
-        width: 50%; height: 80%;
+        width: 70%; height: 90%;
         transform: translate(-50%, -50%);
         background: white;
         border: 2px solid #444;
         border-radius: 8px;
-        padding: 20px;
         z-index: 9999;
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
-      <h3>경로 탐색 도구</h3>
-      <div>
-        <div style="position: relative;">
-          <input id="companyInputA" class="select-cor" placeholder="기업명 입력" autocomplete="off">
-          <div id="autocompleteA" class="autocomplete-list"></div>
+      <div class = "popup-banner">
+        <h3 style="margin-top:0;">경로 탐색 도구</h3>
+        <div>
+          <div style="position: relative;">
+            <input id="companyInputA" class="select-cor" placeholder="기업명 입력" autocomplete="off">
+            <div id="autocompleteA" class="autocomplete-list"></div>
+          </div>
+          <div style="position: relative;">
+            <input id="companyInputB" class="select-cor" placeholder="기업명 입력" autocomplete="off">
+            <div id="autocompleteB" class="autocomplete-list"></div>
+          </div>
+          <div style="position:relative;">
+            <input id ="departure_time" type="datetime-local" />
+          </div>
+          <button class="route-search-but" onclick="getCarDirection()">검색</button>
         </div>
-        <div style="position: relative;">
-          <input id="companyInputB" class="select-cor" placeholder="기업명 입력" autocomplete="off">
-          <div id="autocompleteB" class="autocomplete-list"></div>
-        </div>
-        <button class="route-search-but" onclick="getCarDirection()">검색</button>
       </div>
-      <div id="kakaoMap" style="width:100%; height:70%;"></div>
+      <div id="kakaoMap" style="width:100%; height:67%;"></div>
       <button onclick="closeModal()">닫기</button>
     </div>
 
@@ -90,7 +94,7 @@
       const clusterer = new kakao.maps.MarkerClusterer({
         map: map,
         averageCenter: true,
-        minLevel: 10
+        minLevel: 5
       });
 
       let companies = [];
@@ -165,6 +169,21 @@
   </script>
 
   <script src="/autocompany.js"></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const input = document.getElementById("departure_time");
+      const now = new Date();
+
+      const yyyy = now.getFullYear();
+      const MM = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+
+      const formatted = `${yyyy}-${MM}-${dd}T${hh}:${mm}`;
+      input.value = formatted;
+    });
+  </script>
   <script src="/search-route.js"></script>
 
 </body>

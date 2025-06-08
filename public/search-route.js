@@ -11,11 +11,27 @@
     if (polylineAtoW) polylineAtoW.setMap(null);
     if (polylineWtoB) polylineWtoB.setMap(null);
   }
+  function formatDepartureTimeString(inputValue) {
+  const date = new Date(inputValue);  // ISO 형식 파싱
+  if (isNaN(date)) return null;
+  console.log(date);
+
+  const yyyy = date.getFullYear();
+  const MM = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+
+  return `${yyyy}${MM}${dd}${hh}${mm}`;  // Kakao API가 요구하는 형식
+}
 
   async function getCarDirection() {
     const companyA = document.getElementById("companyInputA").value;
     const companyB = document.getElementById("companyInputB").value;
+    const departure_time = document.getElementById("departure_time").value;
+    let departureTimeStr = "";
 
+    departureTimeStr = formatDepartureTimeString(departure_time);
     if (!companyA || !companyB) {
       alert("두 기업명을 입력해주세요.");
       return;
@@ -60,7 +76,8 @@
           name: data.carrierWtoB.business_name,
           lng: data.carrierWtoB.coord_x,
           lat: data.carrierWtoB.coord_y
-        }
+        },
+        departure_time: departureTimeStr 
       };
       // 2. Kakao API 호출
       await drawRouteWithKakaoAPI(pointObj);
@@ -72,10 +89,11 @@
   }
   async function drawRouteWithKakaoAPI(pointObj) {
     const REST_API_KEY = 'd050db88ea871e4352d56b8448f3fcaf';
-    const url = 'https://apis-navi.kakaomobility.com/v1/directions';
+    const url = 'https://apis-navi.kakaomobility.com/v1/future/directions';
     const origin = `${pointObj.startPoint.lng},${pointObj.startPoint.lat}`;
     const destination = `${pointObj.endPoint.lng},${pointObj.endPoint.lat}`;
     const waypoint = `${pointObj.viaPoint.lng},${pointObj.viaPoint.lat}`;
+    const departure_time = pointObj.departure_time ;
 
     if (!kakaoMapInstance) {
       kakaoMapInstance = new kakao.maps.Map(document.getElementById("kakaoMap"), {
@@ -91,7 +109,8 @@
     const queryParams = new URLSearchParams({
       origin: origin,
       destination: destination,
-      waypoints: waypoint
+      waypoints: waypoint,
+      departure_time: departure_time
     });
     const requestUrl = `${url}?${queryParams}`;
     console.log(requestUrl);
@@ -143,12 +162,13 @@
       const warehouseMarker = new kakao.maps.Marker({
         position: new kakao.maps.LatLng(pointObj.viaPoint.lat, pointObj.viaPoint.lng),
         map: kakaoMapInstance,
-        title: `출발지: ${pointObj.viaPoint.name}`
+        color:rgb(69, 178, 98),
+        title: `경유지: ${pointObj.viaPoint.name}`
       });
       const Origin = new kakao.maps.Marker({
         position: new kakao.maps.LatLng(pointObj.startPoint.lat, pointObj.startPoint.lng),
         map: kakaoMapInstance,
-        title: `경유지: ${pointObj.startPoint.name}`
+        title: `출발지: ${pointObj.startPoint.name}`
       });
       const Destination = new kakao.maps.Marker({
         position: new kakao.maps.LatLng(pointObj.endPoint.lat, pointObj.endPoint.lng),
