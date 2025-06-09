@@ -113,7 +113,6 @@
       departure_time: departure_time
     });
     const requestUrl = `${url}?${queryParams}`;
-    console.log(requestUrl);
     try {
       const response = await fetch(requestUrl, {
         method: 'GET',
@@ -130,6 +129,24 @@
         alert("경로 데이터를 불러오지 못했습니다.");
         return;
       }
+      const summary = data.routes[0].summary;
+      const totalDistance = summary.distance;  // m
+
+      // 거리 km, 시간 hh:mm 형식 변환
+      const distanceKm = (totalDistance / 1000).toFixed(2);
+      const CO2 = (distanceKm * 0.29).toFixed(2);
+
+      // HTML 요소에 정보 삽입
+      document.getElementById("routeInfo").innerHTML = `
+        <strong style="color:white;"> 출발지:</strong> <span style="color:white;">${pointObj.startPoint.name}</span><br>
+        <strong style="color:white;"> 운송회사:</strong> <span style="color:white;">${pointObj.carrierAtoW.name}</span><br>
+        <strong style="color:white;"> 물류창고:</strong> <span style="color:white;">${pointObj.viaPoint.name}</span><br>
+        <strong style="color:white;"> 운송회사:</strong> <span style="color:white;">${pointObj.carrierWtoB.name}</span><br>
+        <strong style="color:white;"> 도착지:</strong> <span style="color:white;">${pointObj.endPoint.name}</span><br>
+        <strong style="color:white;"> 총 거리:</strong> <span style="color:white;">${distanceKm} km</span><br>
+        <strong style="color:white;"> 예상 탄소배출량:</strong> <span style="color:white;">${CO2}kg CO₂/km</span><br>
+      `;
+
 
       const sections = data.routes[0].sections;
       const linePath = [];
@@ -162,7 +179,6 @@
       const warehouseMarker = new kakao.maps.Marker({
         position: new kakao.maps.LatLng(pointObj.viaPoint.lat, pointObj.viaPoint.lng),
         map: kakaoMapInstance,
-        color:rgb(69, 178, 98),
         title: `경유지: ${pointObj.viaPoint.name}`
       });
       const Origin = new kakao.maps.Marker({
@@ -188,6 +204,7 @@
     } catch (error) {
       console.error('Error:', error);
     }
+    
   }
 
 
