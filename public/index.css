@@ -28,7 +28,7 @@ body{
 }
 #category{
    height: 40px;
-   width: 60px;
+   width: 130px;
    font-size: 14px;
    font-weight:bold;
    background-color:rgb(69, 178, 98);
@@ -155,4 +155,12 @@ body{
 }
 #departure_time{
    height: 30px;
+}
+.popup-banner-class1{
+   display:flex;
+}
+.routeInfo{
+   width:400px;
+   display:flex;
+   justify-content: center;
 }
